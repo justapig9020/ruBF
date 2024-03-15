@@ -28,3 +28,7 @@ Options:
 ```
 cargo run -- --p ./programs/hello_world.bf
 ```
+
+# License
+
+ruBF is open-source and available under the MIT License. For more details, see the LICENSE file in the repository.
