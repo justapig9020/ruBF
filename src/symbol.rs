@@ -8,7 +8,10 @@ pub enum Symbol {
     LeftBracket,
     Output,
     Input,
+    Slash,
+    NewLine,
     EoF,
+    WhiteSpace,
     Unknown(char),
 }
 
@@ -23,6 +26,9 @@ impl From<char> for Symbol {
             '[' => Self::LeftBracket,
             '.' => Self::Output,
             ',' => Self::Input,
+            '/' => Self::Slash,
+            '\n' => Self::NewLine,
+            ' ' | '\t' => Self::WhiteSpace,
             v => Self::Unknown(v),
         }
     }
@@ -47,6 +53,10 @@ mod symbol {
         assert_eq!(Symbol::from('['), Symbol::LeftBracket);
         assert_eq!(Symbol::from('.'), Symbol::Output);
         assert_eq!(Symbol::from(','), Symbol::Input);
+        assert_eq!(Symbol::from('/'), Symbol::Slash);
+        assert_eq!(Symbol::from('\n'), Symbol::NewLine);
+        assert_eq!(Symbol::from(' '), Symbol::WhiteSpace);
+        assert_eq!(Symbol::from('\t'), Symbol::WhiteSpace);
     }
     #[test]
     fn test_from_u8() {
@@ -58,5 +68,9 @@ mod symbol {
         assert_eq!(Symbol::from(b'['), Symbol::LeftBracket);
         assert_eq!(Symbol::from(b'.'), Symbol::Output);
         assert_eq!(Symbol::from(b','), Symbol::Input);
+        assert_eq!(Symbol::from(b'/'), Symbol::Slash);
+        assert_eq!(Symbol::from(b'\n'), Symbol::NewLine);
+        assert_eq!(Symbol::from(b' '), Symbol::WhiteSpace);
+        assert_eq!(Symbol::from(b'\t'), Symbol::WhiteSpace);
     }
 }

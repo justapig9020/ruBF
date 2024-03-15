@@ -16,7 +16,9 @@ impl From<&str> for Source {
 impl Source {
     fn next_symbol(&mut self) -> Symbol {
         let sym = self.code.get(self.cursor).unwrap_or(&Symbol::EoF);
-        self.cursor += 1;
+        if sym != &Symbol::EoF {
+            self.cursor += 1;
+        }
         *sym
     }
     fn snapshot(&self) -> Snapshot {
@@ -36,6 +38,7 @@ pub struct Program {
 pub enum Expression {
     Loop(Vec<Expression>),
     Operator(Symbol),
+    Skip,
 }
 
 impl TryFrom<&str> for Program {
@@ -46,17 +49,27 @@ impl TryFrom<&str> for Program {
     }
 }
 
+fn skip(source: &mut Source) -> bool {
+    let results = [
+        try_parse(source, comment),
+        try_parse(source, eol),
+        try_parse(source, white_space),
+    ];
+    results.iter().map(|r| r.is_ok()).any(|b| b)
+}
+
 impl TryFrom<Source> for Program {
     type Error = anyhow::Error;
     fn try_from(mut source: Source) -> Result<Self> {
         let mut ast = Vec::new();
         loop {
-            match parse(&mut source, exp) {
+            match try_parse(&mut source, exp) {
                 Ok(exp) => {
                     ast.push(exp);
                 }
                 Err(e) => {
-                    return if source.next_symbol() == Symbol::EoF {
+                    let sym = source.next_symbol();
+                    return if sym == Symbol::EoF {
                         Ok(Self { ast })
                     } else {
                         Err(e)
@@ -68,26 +81,29 @@ impl TryFrom<Source> for Program {
 }
 
 fn exp(source: &mut Source) -> Result<Expression> {
-    let lp_result = parse(source, lp);
+    if skip(source) {
+        return Ok(Expression::Skip);
+    }
+    let lp_result = try_parse(source, lp);
     let lp_err = if let Err(err) = lp_result {
         err
     } else {
         return lp_result;
     };
 
-    let sym_result = parse(source, sym);
+    let sym_result = try_parse(source, sym);
     let sym_err = if let Err(err) = sym_result {
         err
     } else {
         return sym_result;
     };
 
-    Err(anyhow!("parse error: ").context(lp_err).context(sym_err))
+    Err(anyhow!("exp: {lp_err:?} {sym_err:?}"))
 }
 
 fn exp_list(source: &mut Source) -> Result<Vec<Expression>> {
     let mut result = Vec::new();
-    while let Ok(exp) = parse(source, exp) {
+    while let Ok(exp) = try_parse(source, exp) {
         result.push(exp);
     }
     if result.is_empty() {
@@ -103,7 +119,7 @@ fn lp(source: &mut Source) -> Result<Expression> {
         return Err(anyhow!("Expect left bracket, but got {:?}", symbol));
     }
 
-    let exp_list = parse(source, exp_list)?;
+    let exp_list = try_parse(source, exp_list)?;
 
     let symbol = source.next_symbol();
     if Symbol::RightBracket != symbol {
@@ -122,19 +138,47 @@ fn sym(source: &mut Source) -> Result<Expression> {
     }
 }
 
-fn parse<T>(soruce: &mut Source, rule: fn(&mut Source) -> Result<T>) -> Result<T> {
-    let snapshot = soruce.snapshot();
-    if let Ok(exp) = rule(soruce) {
-        return Ok(exp);
+fn comment(source: &mut Source) -> Result<()> {
+    for _ in 0..2 {
+        if source.next_symbol() != Symbol::Slash {
+            return Err(anyhow!("Expect slash"));
+        }
     }
-    soruce.restore(snapshot);
-    Err(anyhow!("parse error"))
+    while source.next_symbol() != Symbol::NewLine {}
+    Ok(())
+}
+
+fn eol(source: &mut Source) -> Result<()> {
+    if source.next_symbol() != Symbol::NewLine {
+        return Err(anyhow!("Expect EoL"));
+    }
+    Ok(())
+}
+
+fn white_space(source: &mut Source) -> Result<()> {
+    if source.next_symbol() != Symbol::WhiteSpace {
+        return Err(anyhow!("Expect white space"));
+    }
+    Ok(())
+}
+
+fn try_parse<T>(soruce: &mut Source, rule: fn(&mut Source) -> Result<T>) -> Result<T> {
+    let snapshot = soruce.snapshot();
+    match rule(soruce) {
+        Err(e) => {
+            soruce.restore(snapshot);
+            Err(e.context("parse error"))
+        }
+        Ok(exp) => Ok(exp),
+    }
 }
 
 #[cfg(test)]
 mod syntax {
     use super::*;
     use crate::symbol::Symbol::*;
+    use Expression::*;
+
     #[test]
     fn test_parser() {
         let code = Source::from("[+]-");
@@ -142,8 +186,8 @@ mod syntax {
         assert_eq!(
             program.ast,
             vec![
-                Expression::Loop(vec![Expression::Operator(PlusOne)]),
-                Expression::Operator(MinusOne),
+                Loop(vec![Expression::Operator(PlusOne)]),
+                Operator(MinusOne),
             ]
         );
     }
@@ -153,10 +197,34 @@ mod syntax {
         let program = Program::try_from(code).unwrap_or_else(|e| panic!("Error: {}", e));
         assert_eq!(
             program.ast,
-            vec![Expression::Loop(vec![
-                Expression::Loop(vec![Expression::Operator(PlusOne)]),
-                Expression::Operator(MinusOne)
+            vec![Loop(vec![
+                Loop(vec![Operator(PlusOne)]),
+                Operator(MinusOne)
             ])]
+        );
+    }
+    #[test]
+    fn test_comment() {
+        let code = Source::from("// comment\n+");
+        let program = Program::try_from(code).unwrap_or_else(|e| panic!("Error: {}", e));
+        assert_eq!(program.ast, vec![Skip, Operator(PlusOne)]);
+    }
+    #[test]
+    fn test_eol() {
+        let code = Source::from("\n+\n-\n");
+        let program = Program::try_from(code).unwrap_or_else(|e| panic!("Error: {}", e));
+        assert_eq!(
+            program.ast,
+            vec![Skip, Operator(PlusOne), Skip, Operator(MinusOne), Skip]
+        );
+    }
+    #[test]
+    fn test_white_space() {
+        let code = Source::from(" +\t-");
+        let program = Program::try_from(code).unwrap_or_else(|e| panic!("Error: {}", e));
+        assert_eq!(
+            program.ast,
+            vec![Skip, Operator(PlusOne), Skip, Operator(MinusOne)]
         );
     }
 }

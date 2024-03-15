@@ -29,6 +29,7 @@ impl<'a> VirtualMachine<'a> {
             match exp {
                 Loop(ast) => self.execute_loop(ast)?,
                 Operator(sym) => self.execute_symbol(*sym)?,
+                Skip => {}
             }
         }
         Ok(())
