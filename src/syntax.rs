@@ -1,15 +1,19 @@
 use crate::symbol::Symbol;
 use anyhow::{anyhow, Result};
 
-struct Source<'a> {
-    code: &'a [Symbol],
+pub struct Program {
+    code: Vec<Symbol>,
     cursor: usize,
 }
 
-impl<'a> Source<'a> {
-    fn new(code: &'a [Symbol]) -> Self {
+impl From<&str> for Program {
+    fn from(code: &str) -> Self {
+        let code = code.chars().map(Symbol::from).collect();
         Self { code, cursor: 0 }
     }
+}
+
+impl Program {
     fn next_symbol(&mut self) -> Symbol {
         let sym = self.code.get(self.cursor).or(Some(&Symbol::EoF)).unwrap();
         self.cursor += 1;
@@ -24,7 +28,7 @@ impl<'a> Source<'a> {
 }
 
 type Snapshot = usize;
-type Program = Vec<Expression>;
+type AST = Vec<Expression>;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 enum Expression {
@@ -32,26 +36,28 @@ enum Expression {
     Operator(Symbol),
 }
 
-pub fn parser(program: &[Symbol]) -> Result<Program> {
-    let source = &mut Source::new(program);
-    let mut result = Vec::new();
-    loop {
-        match parse(source, exp) {
-            Ok(exp) => {
-                result.push(exp);
-            }
-            Err(e) => {
-                return if source.next_symbol() == Symbol::EoF {
-                    Ok(result)
-                } else {
-                    Err(e)
-                };
+impl TryFrom<Program> for AST {
+    type Error = anyhow::Error;
+    fn try_from(mut program: Program) -> Result<Self> {
+        let mut result = Vec::new();
+        loop {
+            match parse(&mut program, exp) {
+                Ok(exp) => {
+                    result.push(exp);
+                }
+                Err(e) => {
+                    return if program.next_symbol() == Symbol::EoF {
+                        Ok(result)
+                    } else {
+                        Err(e)
+                    };
+                }
             }
         }
     }
 }
 
-fn exp(program: &mut Source) -> Result<Expression> {
+fn exp(program: &mut Program) -> Result<Expression> {
     let lp_result = parse(program, lp);
     let lp_err = if let Err(err) = lp_result {
         err
@@ -69,7 +75,7 @@ fn exp(program: &mut Source) -> Result<Expression> {
     Err(anyhow!("parse error: ").context(lp_err).context(sym_err))
 }
 
-fn exp_list(program: &mut Source) -> Result<Vec<Expression>> {
+fn exp_list(program: &mut Program) -> Result<Vec<Expression>> {
     let mut result = Vec::new();
     while let Ok(exp) = parse(program, exp) {
         result.push(exp);
@@ -81,7 +87,7 @@ fn exp_list(program: &mut Source) -> Result<Vec<Expression>> {
     }
 }
 
-fn lp(program: &mut Source) -> Result<Expression> {
+fn lp(program: &mut Program) -> Result<Expression> {
     let symbol = program.next_symbol();
     if Symbol::LeftBracket != symbol {
         return Err(anyhow!("Expect left bracket, but got {:?}", symbol));
@@ -96,7 +102,7 @@ fn lp(program: &mut Source) -> Result<Expression> {
     Ok(Expression::Loop(exp_list))
 }
 
-fn sym(program: &mut Source) -> Result<Expression> {
+fn sym(program: &mut Program) -> Result<Expression> {
     let symbol = program.next_symbol();
     match symbol {
         Symbol::RightBracket | Symbol::LeftBracket | Symbol::EoF => {
@@ -106,7 +112,7 @@ fn sym(program: &mut Source) -> Result<Expression> {
     }
 }
 
-fn parse<T>(program: &mut Source, rule: fn(&mut Source) -> Result<T>) -> Result<T> {
+fn parse<T>(program: &mut Program, rule: fn(&mut Program) -> Result<T>) -> Result<T> {
     let snapshot = program.snapshot();
     if let Ok(exp) = rule(program) {
         return Ok(exp);
@@ -121,8 +127,8 @@ mod syntax {
     use crate::symbol::Symbol::*;
     #[test]
     fn test_parser() {
-        let code = vec![LeftBracket, PlusOne, RightBracket, MinusOne];
-        let program = parser(&code);
+        let code = Program::from("[+]-");
+        let program = AST::try_from(code);
         assert_eq!(
             program.unwrap_or_else(|e| panic!("Error: {}", e)),
             vec![
