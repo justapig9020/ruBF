@@ -137,4 +137,16 @@ mod syntax {
             ]
         );
     }
+    #[test]
+    fn test_parser_nested_loop() {
+        let code = Program::from("[[+]-]");
+        let program = AST::try_from(code);
+        assert_eq!(
+            program.unwrap_or_else(|e| panic!("Error: {}", e)),
+            vec![Expression::Loop(vec![
+                Expression::Loop(vec![Expression::Operator(PlusOne)]),
+                Expression::Operator(MinusOne)
+            ])]
+        );
+    }
 }
