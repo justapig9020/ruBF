@@ -6,18 +6,14 @@ use std::io::{Read, Write};
 
 const BUFFER_SIZE: usize = 100;
 
-pub struct VirtualMachine<'a, R, W> {
+pub struct VirtualMachine<'a> {
     tap: Tap,
-    input: &'a mut R,
-    output: &'a mut W,
+    input: &'a mut dyn Read,
+    output: &'a mut dyn Write,
 }
 
-impl<'a, R, W> VirtualMachine<'a, R, W>
-where
-    R: Read,
-    W: Write,
-{
-    pub fn new(input: &'a mut R, output: &'a mut W) -> Self {
+impl<'a> VirtualMachine<'a> {
+    pub fn new(input: &'a mut dyn Read, output: &'a mut dyn Write) -> Self {
         Self {
             tap: Tap::default(),
             input,
