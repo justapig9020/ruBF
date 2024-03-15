@@ -8,7 +8,7 @@ pub enum Symbol {
     LeftBracket,
     Output,
     Input,
-    Unknown,
+    Unknown(char),
 }
 
 impl From<char> for Symbol {
@@ -22,7 +22,7 @@ impl From<char> for Symbol {
             '[' => Self::LeftBracket,
             '.' => Self::Output,
             ',' => Self::Input,
-            _ => Self::Unknown,
+            v => Self::Unknown(v),
         }
     }
 }
