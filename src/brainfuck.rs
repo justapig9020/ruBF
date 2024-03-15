@@ -4,8 +4,6 @@ use crate::tap::{Direction, Tap};
 use anyhow::Result;
 use std::io::{Read, Write};
 
-const BUFFER_SIZE: usize = 100;
-
 pub struct VirtualMachine<'a> {
     tap: Tap,
     input: &'a mut dyn Read,
