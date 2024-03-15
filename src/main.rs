@@ -1,3 +1,4 @@
+mod brainfuck;
 mod symbol;
 mod syntax;
 mod tap;
