@@ -1,7 +1,5 @@
-use anyhow::{self, Result};
-
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-enum Symbol {
+pub enum Symbol {
     PlusOne,
     MinusOne,
     RightShift,
@@ -10,22 +8,28 @@ enum Symbol {
     LeftBracket,
     Output,
     Input,
+    Unknown,
 }
 
-impl TryFrom<char> for Symbol {
-    type Error = anyhow::Error;
-    fn try_from(value: char) -> Result<Self> {
+impl From<char> for Symbol {
+    fn from(value: char) -> Self {
         match value {
-            '+' => Ok(Self::PlusOne),
-            '-' => Ok(Self::MinusOne),
-            '>' => Ok(Self::RightShift),
-            '<' => Ok(Self::LeftShift),
-            ']' => Ok(Self::RightBracket),
-            '[' => Ok(Self::LeftBracket),
-            '.' => Ok(Self::Output),
-            ',' => Ok(Self::Input),
-            _ => Err(anyhow::anyhow!("Invalid symbol")),
+            '+' => Self::PlusOne,
+            '-' => Self::MinusOne,
+            '>' => Self::RightShift,
+            '<' => Self::LeftShift,
+            ']' => Self::RightBracket,
+            '[' => Self::LeftBracket,
+            '.' => Self::Output,
+            ',' => Self::Input,
+            _ => Self::Unknown,
         }
+    }
+}
+
+impl From<u8> for Symbol {
+    fn from(value: u8) -> Self {
+        char::from(value).into()
     }
 }
 
@@ -33,15 +37,25 @@ impl TryFrom<char> for Symbol {
 mod symbol {
     use super::*;
     #[test]
-    fn test_try_from() {
-        assert_eq!(Symbol::try_from('+').unwrap(), Symbol::PlusOne);
-        assert_eq!(Symbol::try_from('-').unwrap(), Symbol::MinusOne);
-        assert_eq!(Symbol::try_from('>').unwrap(), Symbol::RightShift);
-        assert_eq!(Symbol::try_from('<').unwrap(), Symbol::LeftShift);
-        assert_eq!(Symbol::try_from(']').unwrap(), Symbol::RightBracket);
-        assert_eq!(Symbol::try_from('[').unwrap(), Symbol::LeftBracket);
-        assert_eq!(Symbol::try_from('.').unwrap(), Symbol::Output);
-        assert_eq!(Symbol::try_from(',').unwrap(), Symbol::Input);
-        assert!(Symbol::try_from('a').is_err());
+    fn test_from_char() {
+        assert_eq!(Symbol::from('+'), Symbol::PlusOne);
+        assert_eq!(Symbol::from('-'), Symbol::MinusOne);
+        assert_eq!(Symbol::from('>'), Symbol::RightShift);
+        assert_eq!(Symbol::from('<'), Symbol::LeftShift);
+        assert_eq!(Symbol::from(']'), Symbol::RightBracket);
+        assert_eq!(Symbol::from('['), Symbol::LeftBracket);
+        assert_eq!(Symbol::from('.'), Symbol::Output);
+        assert_eq!(Symbol::from(','), Symbol::Input);
+    }
+    #[test]
+    fn test_from_u8() {
+        assert_eq!(Symbol::from(b'+'), Symbol::PlusOne);
+        assert_eq!(Symbol::from(b'-'), Symbol::MinusOne);
+        assert_eq!(Symbol::from(b'>'), Symbol::RightShift);
+        assert_eq!(Symbol::from(b'<'), Symbol::LeftShift);
+        assert_eq!(Symbol::from(b']'), Symbol::RightBracket);
+        assert_eq!(Symbol::from(b'['), Symbol::LeftBracket);
+        assert_eq!(Symbol::from(b'.'), Symbol::Output);
+        assert_eq!(Symbol::from(b','), Symbol::Input);
     }
 }
