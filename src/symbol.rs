@@ -8,6 +8,7 @@ pub enum Symbol {
     LeftBracket,
     Output,
     Input,
+    EoF,
     Unknown(char),
 }
 
