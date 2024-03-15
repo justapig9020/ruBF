@@ -1,7 +1,7 @@
 use crate::symbol::Symbol;
-use crate::syntax::{Expression, Program, Source};
+use crate::syntax::{Expression, Program};
 use crate::tap::{Direction, Tap};
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use std::io::{Read, Write};
 
 const BUFFER_SIZE: usize = 100;
@@ -72,17 +72,28 @@ mod brainfuck {
     use super::*;
     use std::io::Cursor;
 
-    #[test]
-    fn hello_world() {
-        let program = "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.";
-        let expect_output = "Hello World!\n";
-        let mut input = Cursor::new(Vec::with_capacity(expect_output.len()));
-        let mut output = Cursor::new(Vec::with_capacity(expect_output.len()));
+    fn run_and_assert(program: &str, expect: &str) {
+        let mut input = Cursor::new(Vec::with_capacity(expect.len()));
+        let mut output = Cursor::new(Vec::with_capacity(expect.len()));
 
         let mut bf = VirtualMachine::new(&mut input, &mut output);
         bf.run(program).unwrap();
 
         let output = String::from_utf8(output.into_inner()).unwrap();
-        assert_eq!(output, expect_output);
+        assert_eq!(output, expect);
+    }
+
+    #[test]
+    fn hello_world() {
+        let program = "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.";
+        let expect = "Hello World!\n";
+        run_and_assert(program, expect);
+    }
+
+    #[test]
+    fn adder() {
+        let program = "++++++++++++++++++++++++++++++>+++[-<+>]<.";
+        let expect = "!";
+        run_and_assert(program, expect)
     }
 }
