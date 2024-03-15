@@ -15,7 +15,7 @@ impl From<&str> for Source {
 
 impl Source {
     fn next_symbol(&mut self) -> Symbol {
-        let sym = self.code.get(self.cursor).or(Some(&Symbol::EoF)).unwrap();
+        let sym = self.code.get(self.cursor).unwrap_or(&Symbol::EoF);
         self.cursor += 1;
         *sym
     }
