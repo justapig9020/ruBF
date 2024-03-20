@@ -1,6 +1,6 @@
-use crate::symbol::Symbol;
 use crate::syntax::{Expression, Program};
 use crate::tap::{Direction, Tap};
+use crate::token::Token;
 use anyhow::Result;
 use std::io::{Read, Write};
 
@@ -46,8 +46,8 @@ impl<'a> VirtualMachine<'a> {
         }
         Ok(())
     }
-    fn execute_symbol(&mut self, symbol: Symbol) -> Result<()> {
-        use Symbol::*;
+    fn execute_symbol(&mut self, symbol: Token) -> Result<()> {
+        use Token::*;
         match symbol {
             PlusOne => self.tap.set(self.tap.get().wrapping_add(1)),
             MinusOne => self.tap.set(self.tap.get().wrapping_sub(1)),

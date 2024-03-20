@@ -1,22 +1,22 @@
-use crate::symbol::Symbol;
+use crate::token::Token;
 use anyhow::{anyhow, Result};
 
 pub struct Source {
-    code: Vec<Symbol>,
+    code: Vec<Token>,
     cursor: usize,
 }
 
 impl From<&str> for Source {
     fn from(code: &str) -> Self {
-        let code = code.chars().map(Symbol::from).collect();
+        let code = code.chars().map(Token::from).collect();
         Self { code, cursor: 0 }
     }
 }
 
 impl Source {
-    fn next_symbol(&mut self) -> Symbol {
-        let sym = self.code.get(self.cursor).unwrap_or(&Symbol::EoF);
-        if sym != &Symbol::EoF {
+    fn next_symbol(&mut self) -> Token {
+        let sym = self.code.get(self.cursor).unwrap_or(&Token::EoF);
+        if sym != &Token::EoF {
             self.cursor += 1;
         }
         *sym
@@ -37,7 +37,7 @@ pub struct Program {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Expression {
     Loop(Vec<Expression>),
-    Operator(Symbol),
+    Operator(Token),
     Skip,
 }
 
@@ -69,7 +69,7 @@ impl TryFrom<Source> for Program {
                 }
                 Err(e) => {
                     let sym = source.next_symbol();
-                    return if sym == Symbol::EoF {
+                    return if sym == Token::EoF {
                         Ok(Self { ast })
                     } else {
                         Err(e)
@@ -115,14 +115,14 @@ fn exp_list(source: &mut Source) -> Result<Vec<Expression>> {
 
 fn lp(source: &mut Source) -> Result<Expression> {
     let symbol = source.next_symbol();
-    if Symbol::LeftBracket != symbol {
+    if Token::LeftBracket != symbol {
         return Err(anyhow!("Expect left bracket, but got {:?}", symbol));
     }
 
     let exp_list = try_parse(source, exp_list)?;
 
     let symbol = source.next_symbol();
-    if Symbol::RightBracket != symbol {
+    if Token::RightBracket != symbol {
         return Err(anyhow!("Expect right bracket, but got {:?}", symbol));
     }
     Ok(Expression::Loop(exp_list))
@@ -131,7 +131,7 @@ fn lp(source: &mut Source) -> Result<Expression> {
 fn sym(source: &mut Source) -> Result<Expression> {
     let symbol = source.next_symbol();
     match symbol {
-        Symbol::RightBracket | Symbol::LeftBracket | Symbol::EoF => {
+        Token::RightBracket | Token::LeftBracket | Token::EoF => {
             Err(anyhow!("Expect symbols, but got {:?}", symbol))
         }
         _ => Ok(Expression::Operator(symbol)),
@@ -140,23 +140,23 @@ fn sym(source: &mut Source) -> Result<Expression> {
 
 fn comment(source: &mut Source) -> Result<()> {
     for _ in 0..2 {
-        if source.next_symbol() != Symbol::Slash {
+        if source.next_symbol() != Token::Slash {
             return Err(anyhow!("Expect slash"));
         }
     }
-    while source.next_symbol() != Symbol::NewLine {}
+    while source.next_symbol() != Token::NewLine {}
     Ok(())
 }
 
 fn eol(source: &mut Source) -> Result<()> {
-    if source.next_symbol() != Symbol::NewLine {
+    if source.next_symbol() != Token::NewLine {
         return Err(anyhow!("Expect EoL"));
     }
     Ok(())
 }
 
 fn white_space(source: &mut Source) -> Result<()> {
-    if source.next_symbol() != Symbol::WhiteSpace {
+    if source.next_symbol() != Token::WhiteSpace {
         return Err(anyhow!("Expect white space"));
     }
     Ok(())
@@ -176,7 +176,7 @@ fn try_parse<T>(soruce: &mut Source, rule: fn(&mut Source) -> Result<T>) -> Resu
 #[cfg(test)]
 mod syntax {
     use super::*;
-    use crate::symbol::Symbol::*;
+    use crate::symbol::Token::*;
     use Expression::*;
 
     #[test]

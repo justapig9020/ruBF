@@ -1,7 +1,7 @@
 mod brainfuck;
-mod symbol;
 mod syntax;
 mod tap;
+mod token;
 use anyhow::Result;
 use clap::Parser;
 use std::fs::read_to_string;
