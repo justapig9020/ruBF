@@ -1,11 +1,12 @@
 use std::collections::VecDeque;
 
-const DEFAULT_TAP_SIZE: usize = 3000;
+const DEFAULT_TAP_SIZE: usize = 10;
 pub enum Direction {
     Right,
     Left,
 }
 
+#[derive(Debug)]
 pub struct Tap {
     cursor: isize,
     tap: VecDeque<u8>,

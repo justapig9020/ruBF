@@ -10,6 +10,12 @@ pub struct VirtualMachine<'a> {
     output: &'a mut dyn Write,
 }
 
+impl std::fmt::Debug for VirtualMachine<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.tap)
+    }
+}
+
 impl<'a> VirtualMachine<'a> {
     pub fn new(input: &'a mut dyn Read, output: &'a mut dyn Write) -> Self {
         Self {
