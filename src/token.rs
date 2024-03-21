@@ -15,6 +15,25 @@ pub enum Token {
     Unknown(char),
 }
 
+impl Into<char> for Token {
+    fn into(self) -> char {
+        match self {
+            Self::PlusOne => '+',
+            Self::MinusOne => '-',
+            Self::RightShift => '>',
+            Self::LeftShift => '<',
+            Self::RightBracket => ']',
+            Self::LeftBracket => '[',
+            Self::Output => '.',
+            Self::Input => ',',
+            Self::Slash => '/',
+            Self::NewLine => '\n',
+            Self::EoF => '\0',
+            _ => ' ',
+        }
+    }
+}
+
 impl From<char> for Token {
     fn from(value: char) -> Self {
         match value {
