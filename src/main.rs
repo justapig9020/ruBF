@@ -17,6 +17,8 @@ struct Args {
     input: Option<String>,
     #[arg(short, long)]
     output: Option<String>,
+    #[arg(short, long, default_value_t = false)]
+    debug: bool,
 }
 
 fn main() -> Result<()> {
@@ -36,7 +38,11 @@ fn main() -> Result<()> {
         Box::new(stdout)
     };
     let program = read_to_string(args.program)?;
-    let mut vm = brainfuck::VirtualMachine::new(&mut input, &mut output);
+    let mut vm = if args.debug {
+        brainfuck::VirtualMachine::new_debug(&mut input, &mut output)
+    } else {
+        brainfuck::VirtualMachine::new(&mut input, &mut output)
+    };
     vm.run(&program)?;
     Ok(())
 }

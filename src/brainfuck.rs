@@ -6,6 +6,7 @@ use std::io::{Read, Write};
 
 pub struct VirtualMachine<'a> {
     tap: Tap,
+    debug: bool,
     input: &'a mut dyn Read,
     output: &'a mut dyn Write,
 }
@@ -20,6 +21,15 @@ impl<'a> VirtualMachine<'a> {
     pub fn new(input: &'a mut dyn Read, output: &'a mut dyn Write) -> Self {
         Self {
             tap: Tap::default(),
+            debug: false,
+            input,
+            output,
+        }
+    }
+    pub fn new_debug(input: &'a mut dyn Read, output: &'a mut dyn Write) -> Self {
+        Self {
+            tap: Tap::default(),
+            debug: true,
             input,
             output,
         }
@@ -46,9 +56,13 @@ impl<'a> VirtualMachine<'a> {
         }
         Ok(())
     }
-    fn execute_symbol(&mut self, symbol: Token) -> Result<()> {
+    fn execute_symbol(&mut self, token: Token) -> Result<()> {
         use Token::*;
-        match symbol {
+        if self.debug {
+            writeln!(self.output, "tap: {:?}", self.tap)?;
+            writeln!(self.output, "symbol: {:?}", token)?;
+        }
+        match token {
             PlusOne => self.tap.set(self.tap.get().wrapping_add(1)),
             MinusOne => self.tap.set(self.tap.get().wrapping_sub(1)),
             RightShift => self.tap.move_cursor(Direction::Right),
