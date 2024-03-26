@@ -1,6 +1,6 @@
 mod brainfuck;
 mod syntax;
-mod tap;
+mod tape;
 mod token;
 use anyhow::Result;
 use clap::Parser;

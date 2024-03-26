@@ -1,4 +1,4 @@
 pub mod brainfuck;
 pub mod syntax;
-pub mod tap;
+pub mod tape;
 pub mod token;

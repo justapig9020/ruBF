@@ -176,7 +176,7 @@ fn try_parse<T>(soruce: &mut Source, rule: fn(&mut Source) -> Result<T>) -> Resu
 #[cfg(test)]
 mod syntax {
     use super::*;
-    use crate::symbol::Token::*;
+    use crate::token::Token::*;
     use Expression::*;
 
     #[test]

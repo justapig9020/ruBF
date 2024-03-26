@@ -1,11 +1,11 @@
 use crate::syntax::{Expression, Program};
-use crate::tap::{Direction, Tap};
+use crate::tape::{Direction, Tape};
 use crate::token::Token;
 use anyhow::Result;
 use std::io::{Read, Write};
 
 pub struct VirtualMachine<'a> {
-    tap: Tap,
+    tape: Tape,
     debug: bool,
     input: &'a mut dyn Read,
     output: &'a mut dyn Write,
@@ -13,14 +13,14 @@ pub struct VirtualMachine<'a> {
 
 impl std::fmt::Debug for VirtualMachine<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self.tap)
+        write!(f, "{:?}", self.tape)
     }
 }
 
 impl<'a> VirtualMachine<'a> {
     pub fn new(input: &'a mut dyn Read, output: &'a mut dyn Write) -> Self {
         Self {
-            tap: Tap::default(),
+            tape: Tape::default(),
             debug: false,
             input,
             output,
@@ -28,7 +28,7 @@ impl<'a> VirtualMachine<'a> {
     }
     pub fn new_debug(input: &'a mut dyn Read, output: &'a mut dyn Write) -> Self {
         Self {
-            tap: Tap::default(),
+            tape: Tape::default(),
             debug: true,
             input,
             output,
@@ -51,7 +51,7 @@ impl<'a> VirtualMachine<'a> {
         Ok(())
     }
     fn execute_loop(&mut self, ast: &[Expression]) -> Result<()> {
-        while self.tap.get() != 0 {
+        while self.tape.get() != 0 {
             self.execute_ast(ast)?;
         }
         Ok(())
@@ -59,21 +59,21 @@ impl<'a> VirtualMachine<'a> {
     fn execute_symbol(&mut self, token: Token) -> Result<()> {
         use Token::*;
         if self.debug {
-            writeln!(self.output, "tap: {:?}", self.tap)?;
+            writeln!(self.output, "tape: {:?}", self.tape)?;
             writeln!(self.output, "symbol: {:?}", token)?;
         }
         match token {
-            PlusOne => self.tap.set(self.tap.get().wrapping_add(1)),
-            MinusOne => self.tap.set(self.tap.get().wrapping_sub(1)),
-            RightShift => self.tap.move_cursor(Direction::Right),
-            LeftShift => self.tap.move_cursor(Direction::Left),
+            PlusOne => self.tape.set(self.tape.get().wrapping_add(1)),
+            MinusOne => self.tape.set(self.tape.get().wrapping_sub(1)),
+            RightShift => self.tape.move_cursor(Direction::Right),
+            LeftShift => self.tape.move_cursor(Direction::Left),
             Input => {
                 let mut buf = [0; 1];
                 self.input.read_exact(&mut buf)?;
-                self.tap.set(buf[0]);
+                self.tape.set(buf[0]);
             }
             Output => {
-                let value = self.tap.get();
+                let value = self.tape.get();
                 write!(self.output, "{}", char::from(value))?;
             }
             _ => {}
