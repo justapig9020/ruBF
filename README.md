@@ -35,7 +35,7 @@ This project is part of a series aimed at building a compiler to prove that Brai
 
 - [tm-compiler](https://github.com/justapig9020/tm-compiler): Converts Turing machines into a custom C-like IR (bf-c).
 - [bf-compiler](https://github.com/justapig9020/bf-compiler): Compiles bf-c programs into Brainfuck.
-- [ru-bf](https://github.com/justapig9020/ru-bf): A Brainfuck virtual machine.
+- [rubf](https://github.com/justapig9020/rubf): A Brainfuck virtual machine.
 
 ## License
 
