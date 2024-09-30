@@ -69,12 +69,18 @@ impl<'a> VirtualMachine<'a> {
             LeftShift => self.tape.move_cursor(Direction::Left),
             Input => {
                 let mut buf = [0; 1];
-                self.input.read_exact(&mut buf)?;
+                loop {
+                    self.input.read_exact(&mut buf)?;
+                    if buf[0] != b'\n' {
+                        break;
+                    }
+                }
                 self.tape.set(buf[0]);
             }
             Output => {
                 let value = self.tape.get();
                 write!(self.output, "{}", char::from(value))?;
+                self.output.flush()?;
             }
             _ => {}
         }
